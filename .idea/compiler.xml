@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Annotation profile for s-pay-mall-mvc-eason" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$PROJECT_DIR$/../../apache-maven-3.9.9/mvn_repo/org/projectlombok/lombok/unknown/lombok-unknown.jar" />
+        </processorPath>
+        <module name="s-pay-mall-service" />
+        <module name="s-pay-mall-web" />
+        <module name="s-pay-mall-domain" />
+        <module name="s-pay-mall-dao" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="s-pay-mall-dao" options="-parameters" />
+      <module name="s-pay-mall-domain" options="-parameters" />
+      <module name="s-pay-mall-mvc-eason" options="-parameters" />
+      <module name="s-pay-mall-service" options="-parameters" />
+      <module name="s-pay-mall-web" options="-parameters" />
+    </option>
+  </component>
+</project>
