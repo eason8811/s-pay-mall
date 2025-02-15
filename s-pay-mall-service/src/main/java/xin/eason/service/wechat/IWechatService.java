@@ -6,7 +6,6 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 import xin.eason.domain.req.WechatQrCodeReq;
-import xin.eason.domain.req.WechatReq;
 import xin.eason.domain.res.WechatQrCodeRes;
 import xin.eason.domain.res.WechatRes;
 
