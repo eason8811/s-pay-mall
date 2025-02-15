@@ -68,6 +68,11 @@
             <groupId>com.squareup.retrofit2</groupId>
             <artifactId>adapter-rxjava2</artifactId>
         </dependency>
+        <!-- 处理原始数据流 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
         <!-- 支付宝沙箱支付对接文档：https://opendocs.alipay.com/common/02kkv7 -->
         <dependency>
             <groupId>com.alipay.sdk</groupId>
@@ -89,6 +94,11 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
+        </dependency>
+        <!-- hutools 工具包 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
         </dependency>
     </dependencies>
 

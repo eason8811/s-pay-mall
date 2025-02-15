@@ -4,3 +4,8 @@ logging-level:
   domain: info
   service: info
   web: info
+
+wechat:
+  grant-type: client_credential
+  appid: wxd19a1a5f30dea77c
+  secret: 2fa7d4e5417f9404432c76793e99e91d

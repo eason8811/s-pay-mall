@@ -14,3 +14,8 @@
 
 
 s-pay-mall-service/src/test/java/xin/eason/service/TestRetrofit2.java
+/s-pay-mall-web/target/
+/s-pay-mall-service/target/
+/s-pay-mall-domain/target/
+/s-pay-mall-dao/target/
+/s-pay-mall-common/target/

@@ -4,3 +4,4 @@ logging-level:
   domain: info
   service: info
   web: info
+

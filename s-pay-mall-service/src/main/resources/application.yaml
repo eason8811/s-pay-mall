@@ -13,3 +13,4 @@ logging:
         domain: ${logging-level.domain}
         service: ${logging-level.service}
         web: ${logging-level.web}
+
