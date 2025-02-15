@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: domain
+  profiles:
+    active: dev
+
+logging:
+  level:
+    xin:
+      eason:
+        dao: ${logging-level.dao}
+        common: ${logging-level.common}
+        domain: ${logging-level.domain}
+        service: ${logging-level.service}
+        web: ${logging-level.web}

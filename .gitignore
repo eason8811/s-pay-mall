@@ -1,0 +1,16 @@
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+
+!**/target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+/.idea/
+
+
+s-pay-mall-service/src/test/java/xin/eason/service/TestRetrofit2.java

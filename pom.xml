@@ -140,6 +140,13 @@
                 <artifactId>alipay-sdk-java</artifactId>
                 <version>4.38.157.ALL</version>
             </dependency>
+            <!-- 测试依赖 -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>5.12.0-RC2</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

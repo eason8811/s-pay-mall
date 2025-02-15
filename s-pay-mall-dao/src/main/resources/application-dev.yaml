@@ -1,0 +1,6 @@
+logging-level:
+  dao: debug
+  common: info
+  domain: info
+  service: info
+  web: info
