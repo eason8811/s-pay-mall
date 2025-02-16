@@ -18,3 +18,5 @@ wechat:
   grant-type: ${wechat.grant-type}
   appid: ${wechat.appid}
   secret: ${wechat.secret}
+  originalid: ${wechat.originalid}
+  token: ${wechat.token}

@@ -71,9 +71,15 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public String checkLogin(String ticket) {
         String openId = cache.getIfPresent(ticket);
-        if (openId == null || openId.isBlank())
-            return MessageConstant.NO_LOGIN;
-        return MessageConstant.LOGIN;
+        String loginStatus = MessageConstant.NO_LOGIN;
+        log.info("正在检查登录状态...");
+        if (openId != null && !openId.isBlank()){
+            loginStatus = MessageConstant.LOGIN;
+            log.info("登录状态: {}", loginStatus);
+            return loginStatus;
+        }
+        log.info("登录状态: {}", loginStatus);
+        return loginStatus;
     }
 
     /**
