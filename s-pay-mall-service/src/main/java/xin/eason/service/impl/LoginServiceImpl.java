@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import retrofit2.Response;
+import xin.eason.common.cons.WechatConstant;
 import xin.eason.domain.req.WechatQrCodeReq;
 import xin.eason.domain.req.WechatReq;
 import xin.eason.domain.res.WechatQrCodeRes;
@@ -25,10 +26,6 @@ public class LoginServiceImpl implements LoginService {
 
     private final WechatReq wechatReq;
 
-    private final String ACTION_NAME = "QR_LIMIT_STR_SCENE";
-
-    private final Long EXPIRE_SECONDS = 2592000L;
-
     /**
      * 获取 <b>Ticket</b> 业务流程
      *
@@ -40,8 +37,8 @@ public class LoginServiceImpl implements LoginService {
         log.info("获取 Access Token 成功: {}", accessToken);
         log.info("正在获取 Ticket");
         WechatQrCodeReq wechatQrCodeReq = WechatQrCodeReq.builder()
-                .actionName(ACTION_NAME)
-                .expireSeconds(EXPIRE_SECONDS)
+                .actionName(WechatConstant.ACTION_NAME)
+                .expireSeconds(WechatConstant.EXPIRE_SECONDS)
                 .actionInfo(
                         WechatQrCodeReq.ActionInfo.builder()
                         .scene(WechatQrCodeReq.Scene.builder().scene_str(String.valueOf(System.currentTimeMillis())).build())

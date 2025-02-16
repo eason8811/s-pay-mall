@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import xin.eason.common.cons.MessageConstant;
 
 import java.io.Serializable;
 
@@ -17,18 +18,16 @@ public class Result<T> implements Serializable {
 
     private T data;
 
-    private static String DEFAULT_MSG = "success";
-
     public static <T> Result<T> success(){
         Result<T> result = new Result<>();
-        result.setMsg(DEFAULT_MSG);
+        result.setMsg(MessageConstant.SUCCESS_MSG);
         result.setCode(1);
         return result;
     }
 
     public static <T> Result<T> success(T data){
         Result<T> result = new Result<>();
-        result.setMsg(DEFAULT_MSG);
+        result.setMsg(MessageConstant.SUCCESS_MSG);
         result.setCode(1);
         result.setData(data);
         return result;
