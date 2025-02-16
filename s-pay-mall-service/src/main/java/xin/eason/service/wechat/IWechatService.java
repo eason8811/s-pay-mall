@@ -6,8 +6,10 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 import xin.eason.domain.req.WechatQrCodeReq;
+import xin.eason.domain.req.WechatTemplateReq;
 import xin.eason.domain.res.WechatQrCodeRes;
 import xin.eason.domain.res.WechatRes;
+import xin.eason.domain.res.WechatTemplateRes;
 
 /**
  * 用于向微信公众平台发送请求获取 <b>Access Token</b> 和 带 <b>Ticket</b> 的二维码
@@ -33,4 +35,12 @@ public interface IWechatService {
      */
     @POST("/cgi-bin/qrcode/create")
     Call<WechatQrCodeRes> getQrCode(@Body WechatQrCodeReq request, @Query("access_token") String accessToken);
+
+    /**
+     * 发送 <b>POST</b> 请求以向指定用户发送模板信息
+     * @param wechatTemplateReq 向公众平台发送的模板信息数据
+     * @return 返回发送模板信息状态的 JSON 数据体
+     */
+    @POST("/cgi-bin/message/template/send")
+    Call<WechatTemplateRes> sendTemplate(@Body WechatTemplateReq wechatTemplateReq, @Query("access_token") String accessToken);
 }

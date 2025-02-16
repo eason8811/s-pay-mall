@@ -1,4 +1,4 @@
-package xin.eason.common.util;
+package xin.eason.domain.po;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 

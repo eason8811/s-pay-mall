@@ -1,11 +1,11 @@
-package xin.eason.common.util;
+package xin.eason.domain.po;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import lombok.Data;
 
 @Data
 @XStreamAlias("xml")
-public class QrCodeScanEventEntity {
+public class TemplateSendEventEntity {
     @XStreamAlias("ToUserName")
     private String toUserName;
 
@@ -21,10 +21,9 @@ public class QrCodeScanEventEntity {
     @XStreamAlias("Event")
     private String event;
 
-    @XStreamAlias("EventKey")
-    private String eventKey;
+    @XStreamAlias("MsgID")
+    private String msgId;
 
-    @XStreamAlias("Ticket")
-    private String ticket;
-
+    @XStreamAlias("Status")
+    private String status;
 }
