@@ -11,5 +11,10 @@ public interface LoginService {
      */
     String getTicket();
 
-
+    /**
+     * 检查登录状态
+     * @param ticket 用于生成二维码的 <b>Ticket</b>
+     * @return 登录状态
+     */
+    String checkLogin(String ticket);
 }

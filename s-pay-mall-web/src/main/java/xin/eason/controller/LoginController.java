@@ -17,9 +17,24 @@ public class LoginController {
 
     private final LoginService loginService;
 
+    /**
+     * 用户获取 <b>Ticket</b> 的接口
+     * @return <b>Ticket</b>
+     */
     @GetMapping("/get_ticket")
     public Result<String> getTicket(){
         String ticket = loginService.getTicket();
         return Result.success(ticket);
+    }
+
+    /**
+     * 前端轮训登录状态接口
+     * @param ticket 之前获取到的用于生成二维码的 <b>Ticket</b>
+     * @return 登录状态
+     */
+    @GetMapping("/check_login")
+    public Result<String> checkLogin(String ticket){
+        String loginStatus = loginService.checkLogin(ticket);
+        return Result.success(loginStatus);
     }
 }

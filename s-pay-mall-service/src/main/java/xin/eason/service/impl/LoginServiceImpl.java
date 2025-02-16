@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import retrofit2.Response;
+import xin.eason.common.cons.MessageConstant;
 import xin.eason.common.cons.WechatConstant;
 import xin.eason.domain.req.WechatQrCodeReq;
 import xin.eason.domain.req.WechatReq;
@@ -62,6 +63,23 @@ public class LoginServiceImpl implements LoginService {
         }
     }
 
+    /**
+     * 检查登录状态
+     * @param ticket 用于生成二维码的 <b>Ticket</b>
+     * @return 登录状态
+     */
+    @Override
+    public String checkLogin(String ticket) {
+        String openId = cache.getIfPresent(ticket);
+        if (openId == null || openId.isBlank())
+            return MessageConstant.NO_LOGIN;
+        return MessageConstant.LOGIN;
+    }
+
+    /**
+     * 获取 <b>Access Token</b> 流程
+     * @return <b>Access Token</b>
+     */
     private String getAccessToken() {
         // 判断缓存中是否存在 Access Token
         String accessToken = cache.getIfPresent("access_token");
