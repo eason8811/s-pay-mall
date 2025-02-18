@@ -11,3 +11,11 @@ wechat:
   secret: 2fa7d4e5417f9404432c76793e99e91d
   originalid: gh_7e8ebd642fae
   token: Eason
+
+spring:
+  datasource:
+    username: root
+    password: 123456
+    address: 192.168.226.128
+    port: 3306
+    database: s-pay-mall

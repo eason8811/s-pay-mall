@@ -1,4 +1,4 @@
-package xin.eason.common.cons;
+package xin.eason.common.constant;
 
 public class WechatConstant {
     public final static String ACTION_NAME = "QR_LIMIT_STR_SCENE";

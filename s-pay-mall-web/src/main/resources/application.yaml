@@ -3,6 +3,18 @@ spring:
     name: common
   profiles:
     active: dev
+  datasource:
+    username: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+    url: jdbc:mysql://${spring.datasource.address}:${spring.datasource.port}/${spring.datasource.database}?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai&useSSL=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+mybatis-plus:
+  configuration:
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
+  global-config:
+    db-config:
+      update-strategy: not_null
+      id-type: auto
 
 logging:
   level:
@@ -20,3 +32,4 @@ wechat:
   secret: ${wechat.secret}
   originalid: ${wechat.originalid}
   token: ${wechat.token}
+

@@ -1,4 +1,4 @@
-package xin.eason.common.cons;
+package xin.eason.common.constant;
 
 public class MessageConstant {
     public final static String NO_LOGIN = "未登录";

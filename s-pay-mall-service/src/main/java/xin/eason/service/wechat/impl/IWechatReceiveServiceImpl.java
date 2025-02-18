@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import retrofit2.Response;
-import xin.eason.common.cons.WechatConstant;
+import xin.eason.common.constant.WechatConstant;
 import xin.eason.common.properties.WechatProperties;
 import xin.eason.domain.po.*;
 import xin.eason.common.util.SignatureUtil;

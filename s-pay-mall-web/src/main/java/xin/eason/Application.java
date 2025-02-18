@@ -1,5 +1,6 @@
 package xin.eason;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -7,14 +8,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerA
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import xin.eason.common.properties.WechatProperties;
-
-@SpringBootApplication(
-        exclude = {
-                DataSourceAutoConfiguration.class,        // 禁用数据源自动配置
-                HibernateJpaAutoConfiguration.class,      // 禁用 JPA 自动配置
-                DataSourceTransactionManagerAutoConfiguration.class  // 禁用事务管理
-        }
-)
+@SpringBootApplication
 @EnableConfigurationProperties(WechatProperties.class)
 public class Application {
     public static void main(String[] args) {

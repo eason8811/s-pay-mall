@@ -1,10 +1,9 @@
 package xin.eason.domain.res;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import xin.eason.common.cons.MessageConstant;
+import xin.eason.common.constant.MessageConstant;
 
 import java.io.Serializable;
 
