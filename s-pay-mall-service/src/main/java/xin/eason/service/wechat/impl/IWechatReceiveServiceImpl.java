@@ -1,7 +1,6 @@
 package xin.eason.service.wechat.impl;
 
 import com.google.common.cache.Cache;
-import com.thoughtworks.xstream.converters.reflection.AbstractReflectionConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -9,12 +8,9 @@ import org.springframework.stereotype.Service;
 import retrofit2.Response;
 import xin.eason.common.cons.WechatConstant;
 import xin.eason.common.properties.WechatProperties;
-import xin.eason.domain.po.MessageTextEntity;
-import xin.eason.domain.po.QrCodeScanEventEntity;
+import xin.eason.domain.po.*;
 import xin.eason.common.util.SignatureUtil;
 import xin.eason.common.util.XmlUtil;
-import xin.eason.domain.po.SubscribeEventEntity;
-import xin.eason.domain.po.TemplateSendEventEntity;
 import xin.eason.domain.req.WechatReceiveReq;
 import xin.eason.domain.req.WechatSignReq;
 import xin.eason.domain.req.WechatTemplateReq;
@@ -23,6 +19,8 @@ import xin.eason.service.wechat.IWechatReceiveService;
 import xin.eason.service.wechat.IWechatService;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -35,9 +33,11 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
 
     private final IWechatService iWechatService;
 
-    private String templateId = "EZXZgdMPpQUabzSAU5tj8gc05zoQ9e-BToUdU02WhiY";
+    private final String loginTemplateId = "EZXZgdMPpQUabzSAU5tj8gc05zoQ9e-BToUdU02WhiY";
 
-    private String turnToUrl = "https://www.baidu.com";
+    private final String locationTemplateId = "pKIT3l2hfdpyUK4x1N8ugHddvty-N4l5VifX0j3sEFA";
+
+    private final String turnToUrl = "https://www.baidu.com";
 
     /**
      * 验证消息来自微信公众平台接口
@@ -87,38 +87,37 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
         String returnMsg = "";
 
         log.info("接收微信公众号信息请求 openId: {}, 请求体:\n{}", openid, requestBody);
-        // 尝试解析为 SCAN 事件
+
         try {
-            returnMsg = scanEventHandle(openid, requestBody);
-            return returnMsg;
-        } catch (AbstractReflectionConverter.UnknownFieldException e) {
-            log.error("当前推送的消息不是二维码扫描的 SCAN 消息");
+            if (requestBody.contains("<Event><![CDATA[" + WechatConstant.SCAN + "]]></Event>") || requestBody.contains("<Ticket>")) {
+                // 解析为 SCAN 事件
+                returnMsg = scanEventHandle(openid, requestBody);
+                return returnMsg;
+            }
+
+            if (requestBody.contains("<Event><![CDATA[" + WechatConstant.SUBSCRIBE + "]]></Event>")) {
+                // 解析为 SUBSCRIBE 事件
+                returnMsg = subscribeEventHandle(openid, requestBody);
+                return returnMsg;
+            }
+
+            if (requestBody.contains("<Event><![CDATA[" + WechatConstant.TEMPLATE_SEND_JOB_FINISH + "]]></Event>")) {
+                // 解析为 TEMPLATESENDJOBFINISH (模板消息发送成功) 事件
+                returnMsg = templateSendEventHandle(openid, requestBody);
+                return returnMsg;
+            }
+
+            if (requestBody.contains("<Event><![CDATA[" + WechatConstant.LOCATION + "]]></Event>")) {
+                // 解析为 LOCATION 事件
+                returnMsg = locationEventHandle(openid, requestBody);
+                return returnMsg;
+            }
         } catch (Exception e) {
             log.error("接收微信公众号信息请求 openId: {}, 请求体:\n{}", openid, requestBody, e);
             return "";
         }
 
-        // 尝试解析为 SUBSCRIBE 事件
-        try {
-            returnMsg = subscribeEventHandle(openid, requestBody);
-            return returnMsg;
-        } catch (AbstractReflectionConverter.UnknownFieldException e) {
-            log.error("当前推送的消息不是关注公众号的 SUBSCRIBE 消息");
-        } catch (Exception e) {
-            log.error("接收微信公众号信息请求 openId: {}, 请求体:\n{}", openid, requestBody, e);
-            return "";
-        }
-
-        // 尝试解析为 TEMPLATESENDJOBFINISH (模板消息发送成功) 事件
-        try {
-            returnMsg = templateSendEventHandle(openid, requestBody);
-            return returnMsg;
-        } catch (AbstractReflectionConverter.UnknownFieldException e) {
-            log.error("当前推送的消息不是模板消息发送成功的 TEMPLATESENDJOBFINISH 消息");
-        } catch (Exception e) {
-            log.error("接收微信公众号信息请求 openId: {}, 请求体:\n{}", openid, requestBody, e);
-            return "";
-        }
+        log.info("未知消息推送, 用户 openId: {}, requestBody: \n{}", openid, requestBody);
         return returnMsg;
     }
 
@@ -134,8 +133,10 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
         QrCodeScanEventEntity scanEvent = XmlUtil.xmlToBean(requestBody, QrCodeScanEventEntity.class);
         String ticket = scanEvent.getTicket();
         String eventName = scanEvent.getEvent();
+        Map<String, String> dataMap = new HashMap<>();
+        dataMap.put("openId", openid);
 
-        String returnMessage;
+        String returnMessage = "";
         if (WechatConstant.SCAN.equals(scanEvent.getEvent()) && openid.equals(cache.getIfPresent(ticket))) {
             // 已关注用户扫描二维码事件
             log.info("已关注用户正在扫描公众号二维码, 用户 openId: {}, Ticket: {}", openid, ticket);
@@ -145,7 +146,7 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
             returnMessage = buildMessageTextEntity(openid, "您已经登录！");
 
             // 发送模板信息
-            sendLoginTemplate(templateId, openid, turnToUrl, cache.getIfPresent("access_token"));
+            sendLoginTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
             return returnMessage;
         }
 
@@ -155,27 +156,25 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
             log.info("用户: {} 登陆成功!", openid);
             returnMessage = buildMessageTextEntity(openid, "登陆成功");
             // 发送模板信息
-            sendLoginTemplate(templateId, openid, turnToUrl, cache.getIfPresent("access_token"));
-
-            // 将 Ticket 和用户的 openId 存入缓存 ( Ticket -> openId )
-            cache.put(ticket, openid);
-            return returnMessage;
-        } else if (WechatConstant.SUBSCRIBE.equals(scanEvent.getEvent())) {
-            // 未关注的用户, 通过扫描二维码关注公众号的事件
-            log.info("未关注用户正在扫描公众号二维码, 用户 openId: {}, Ticket: {}", openid, ticket);
-            log.info("未关注用户: {} 登陆成功! 并且已关注!", openid);
-            returnMessage = buildMessageTextEntity(openid, "登陆成功");
-            // 发送模板信息
-            sendLoginTemplate(templateId, openid, turnToUrl, cache.getIfPresent("access_token"));
+            sendLoginTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
 
             // 将 Ticket 和用户的 openId 存入缓存 ( Ticket -> openId )
             cache.put(ticket, openid);
             return returnMessage;
         }
 
-        // 未知消息推送
-        log.info("未知消息推送, Event: {}, 用户 openId: {}, Ticket: {}", eventName, openid, ticket);
-        returnMessage = "";
+        if (WechatConstant.SUBSCRIBE.equals(scanEvent.getEvent())) {
+            // 未关注的用户, 通过扫描二维码关注公众号的事件
+            log.info("未关注用户正在扫描公众号二维码, 用户 openId: {}, Ticket: {}", openid, ticket);
+            log.info("未关注用户: {} 登陆成功! 并且已关注!", openid);
+            returnMessage = buildMessageTextEntity(openid, "登陆成功");
+            // 发送模板信息
+            sendLoginTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
+
+            // 将 Ticket 和用户的 openId 存入缓存 ( Ticket -> openId )
+            cache.put(ticket, openid);
+            return returnMessage;
+        }
 
         return returnMessage;
 
@@ -193,16 +192,10 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
         SubscribeEventEntity subscribeScanEvent = XmlUtil.xmlToBean(requestBody, SubscribeEventEntity.class);
         String eventName = subscribeScanEvent.getEvent();
 
-        String returnMessage;
-        if (WechatConstant.SUBSCRIBE.equals(eventName)) {
-            // 当前为关注消息推送
-            log.info("用户已关注公众号 openId: {}", openid);
-            returnMessage = buildMessageTextEntity(openid, "感谢你的关注！");
-            return returnMessage;
-        }
-        // 未知消息推送
-        log.info("未知消息推送, Event: {}, 用户 openId: {}", eventName, openid);
-        returnMessage = "";
+        String returnMessage = "";
+        // 当前为关注消息推送
+        log.info("用户已关注公众号 openId: {}", openid);
+        returnMessage = buildMessageTextEntity(openid, "感谢你的关注！");
         return returnMessage;
     }
 
@@ -218,18 +211,31 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
         TemplateSendEventEntity templateSendEvent = XmlUtil.xmlToBean(requestBody, TemplateSendEventEntity.class);
         String eventName = templateSendEvent.getEvent();
 
-        String returnMessage = "";
-        if (WechatConstant.TEMPLATE_SEND_JOB_FINISH.equals(eventName)) {
-            // 当前为模板信息发送完成消息推送
-            log.info("模板信息{} msgId: {}, openId: {}",
-                    "success".equals(templateSendEvent.getStatus()) ? "成功发送" : "发送失败",
-                    templateSendEvent.getMsgId(),
-                    openid);
-            return returnMessage;
-        }
-        // 未知消息推送
-        log.info("未知消息推送, Event: {}, 用户 openId: {}", eventName, openid);
-        return returnMessage;
+        // 当前为模板信息发送完成消息推送
+        log.info("模板信息{} msgId: {}, openId: {}",
+                "success".equals(templateSendEvent.getStatus()) ? "成功发送" : "发送失败",
+                templateSendEvent.getMsgId(),
+                openid);
+        return "";
+    }
+
+    /**
+     * 处理微信公众平台推送的 <b>LOCATION</b> 信息
+     *
+     * @param openid      扫码用户的 <b>openId</b>
+     * @param requestBody XML形式的请求体
+     * @return 回复给公众平台的信息
+     */
+    public String locationEventHandle(String openid, String requestBody) {
+        // 消息转换
+        LocationEventEntity locationEvent = XmlUtil.xmlToBean(requestBody, LocationEventEntity.class);
+        String eventName = locationEvent.getEvent();
+        Map<String, String> dataMap = new HashMap<>();
+        dataMap.put("location", "( 纬度: " + locationEvent.getLatitude() + ", 经度: " + locationEvent.getLongitude() + ", 地理位置精度: " + locationEvent.getPrecision());
+
+        // 发送模板信息
+        sendLoginTemplate(locationTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
+        return "";
     }
 
     /**
@@ -259,13 +265,13 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
      * @param accessToken 用于向微信公众平台调用 API 的 <b>Access Token</b>
      * @return 如果发送成功则返回模板信息的 <b>ID</b>
      */
-    private Long sendLoginTemplate(String templateId, String openid, String turnToUrl, String accessToken) {
+    private Long sendLoginTemplate(String templateId, String openid, String turnToUrl, String accessToken, Map<String, String> dataMap) {
         // 发送模板信息
         WechatTemplateReq request = new WechatTemplateReq();
         request.setTemplateId(templateId);
         request.setTouser(openid);
         request.setUrl(turnToUrl);
-        request.put("openId", openid);
+        dataMap.forEach(request::put);
         // 向公众平台发送 http 请求
         try {
             Response<WechatTemplateRes> response = iWechatService.sendTemplate(request, accessToken).execute();

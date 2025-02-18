@@ -7,4 +7,5 @@ public class WechatConstant {
     public final static String SUBSCRIBE = "subscribe";
     public final static String UNSUBSCRIBE = "unsubscribe";
     public final static String TEMPLATE_SEND_JOB_FINISH = "TEMPLATESENDJOBFINISH";
+    public final static String LOCATION = "LOCATION";
 }
