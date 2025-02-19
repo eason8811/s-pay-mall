@@ -2,11 +2,17 @@ package xin.eason.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
+import com.alibaba.fastjson.JSONObject;
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.AlipayClient;
+import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.alipay.api.response.AlipayTradePagePayResponse;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xin.eason.common.constant.OrderStatusEnum;
+import xin.eason.common.properties.AlipayProperties;
 import xin.eason.dao.PayMapper;
 import xin.eason.domain.po.PayOrder;
 import xin.eason.domain.req.ShopCartReq;
@@ -15,6 +21,7 @@ import xin.eason.domain.vo.ProductVO;
 import xin.eason.service.PayService;
 import xin.eason.service.rpc.ProductRpc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -22,9 +29,11 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements PayService {
 
-//    private final PayMapper payMapper;
-
     private final ProductRpc productRpc;
+
+    private final AlipayClient alipayClient;
+
+    private final AlipayProperties alipayProperties;
 
     /**
      * 创建订单 (流水单)
@@ -35,24 +44,36 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
     @Override
     public PayOrderRes createOrder(ShopCartReq shopCartReq) {
         // 查询 该用户 对于这个 商品ID 是否有未支付订单
-        PayOrder payOrder = lambdaQuery()
+        PayOrder unPayOrder = lambdaQuery()
                 .eq(PayOrder::getUserId, shopCartReq.getUserId())
                 .eq(PayOrder::getProductId, shopCartReq.getProductId())
                 .one();
         log.info("正在查询是否有未支付订单...");
-        if (payOrder != null && payOrder.getStatus().equals(OrderStatusEnum.PAY_WAITE)) {
+        if (unPayOrder != null && unPayOrder.getStatus().equals(OrderStatusEnum.PAY_WAITE)) {
             // 存在未支付订单, 直接返回未支付订单信息
-            log.info("存在未支付订单, 订单 ID: {}, 用户 ID: {}", payOrder.getOrderId(), shopCartReq.getUserId());
+            log.info("存在未支付订单, 订单 ID: {}, 用户 ID: {}", unPayOrder.getOrderId(), shopCartReq.getUserId());
+            return PayOrderRes.builder()
+                    .userId(shopCartReq.getUserId())
+                    .orderId(unPayOrder.getOrderId())
+                    .payUrl(unPayOrder.getPayUrl())
+                    .orderStatus(OrderStatusEnum.PAY_WAITE)
+                    .build();
+        } else if (unPayOrder != null && unPayOrder.getStatus().equals(OrderStatusEnum.CREATE)) {
+            // 发生掉单, 流水单存在但是没有支付单
+            log.info("发生掉单");
+            // TODO: 对接支付宝 SDK
+            PayOrder payOrder = doPrePay(
+                    shopCartReq.getProductId(),
+                    unPayOrder.getProductName(),
+                    unPayOrder.getOrderId(),
+                    unPayOrder.getTotalAmount()
+            );
             return PayOrderRes.builder()
                     .userId(shopCartReq.getUserId())
                     .orderId(payOrder.getOrderId())
                     .payUrl(payOrder.getPayUrl())
-                    .orderStatus(OrderStatusEnum.PAY_WAITE)
+                    .orderStatus(payOrder.getStatus())
                     .build();
-        } else if (payOrder != null && payOrder.getStatus().equals(OrderStatusEnum.CREATE)) {
-            // 发生掉单, 流水单存在但是没有支付单
-            log.info("发生掉单");
-            // TODO: 对接支付宝 SDK
         }
 
         // 不存在未支付订单, 创建流水单和支付单
@@ -63,7 +84,7 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
         LocalDateTime nowTime = LocalDateTime.now();
         log.info("正在使用 RPC 通过 productId 获取商品信息...");
 
-        payOrder = PayOrder.builder()
+        PayOrder payOrder = PayOrder.builder()
                 .userId(shopCartReq.getUserId())
                 .productId(shopCartReq.getProductId())
                 .productName(productVO.getProductName())
@@ -78,16 +99,64 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
                 .build();
 
         // 存入数据库
-        PayOrderRes payOrderRes = new PayOrderRes();
-        BeanUtil.copyProperties(payOrder, payOrderRes);
-        payOrderRes.setOrderStatus(payOrder.getStatus());
         save(payOrder);
         log.info("创建订单成功: {}", payOrder);
 
         // TODO: 调用支付宝 SDK 创建支付单
+        PayOrder waitingPayOrder = doPrePay(shopCartReq.getProductId(), payOrder.getProductName(), payOrder.getOrderId(), payOrder.getTotalAmount());
 
+        return PayOrderRes.builder()
+                .userId(shopCartReq.getUserId())
+                .orderId(payOrder.getOrderId())
+                .payUrl(waitingPayOrder.getPayUrl())
+                .orderStatus(waitingPayOrder.getStatus())
+                .build();
+    }
 
-        return payOrderRes;
+    /**
+     * 与支付宝平台对接, 创建支付单
+     * @param productId 商品 ID
+     * @param orderId 唯一的订单ID
+     * @param totalAmount 订单总价格
+     * @return PayOrder 订单对象
+     */
+    private PayOrder doPrePay(String productId, String productName, String orderId, BigDecimal totalAmount) {
+        AlipayTradePagePayRequest payRequest = new AlipayTradePagePayRequest();
+        payRequest.setNotifyUrl(alipayProperties.getNotifyUrl());   // 设置支付宝平台异步回调请求的 Url
+        payRequest.setReturnUrl(alipayProperties.getReturnUrl());   // 设置支付完成后跳转的页面的 Url
+
+        /*JSONObject jsonObject = new JSONObject();*/
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("out_trade_no", orderId);
+        jsonObject.put("subject", productName);
+        jsonObject.put("total_amount", totalAmount.toString());
+        jsonObject.put("product_code", "FAST_INSTANT_TRADE_PAY");
+
+        payRequest.setBizContent(jsonObject.toJSONString());     // 设置具体的请求体
+        String payUrl = null;
+
+        try {
+            AlipayTradePagePayResponse payResponse = alipayClient.pageExecute(payRequest);
+            if (payResponse != null)
+                payUrl = payResponse.getBody();
+        } catch (AlipayApiException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (payUrl == null || payUrl.isBlank()) {
+            throw new RuntimeException("payUrl 获取失败, payUrl 为 null");
+        }
+
+        PayOrder payOrder = PayOrder.builder()
+                .payUrl(payUrl)
+                .orderId(orderId)
+                .status(OrderStatusEnum.PAY_WAITE)
+                .build();
+        log.info("创建支付订单成功, payOrder: {}", payOrder);
+
+        lambdaUpdate().eq(PayOrder::getOrderId, payOrder.getOrderId()).update(payOrder);
+        log.info("支付 URL: \n{}", payUrl);
+        return payOrder;
     }
 
 }

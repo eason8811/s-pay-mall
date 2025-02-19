@@ -9,12 +9,21 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$PROJECT_DIR$/../../apache-maven-3.9.9/mvn_repo/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+          <entry name="$PROJECT_DIR$/../../apache-maven-3.9.9/mvn_repo/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
         <module name="s-pay-mall-service" />
         <module name="s-pay-mall-common" />
-        <module name="s-pay-mall-web" />
         <module name="s-pay-mall-domain" />
         <module name="s-pay-mall-dao" />
+      </profile>
+      <profile name="Annotation profile for s-pay-mall-web" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$PROJECT_DIR$/../../apache-maven-3.9.9/mvn_repo/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+        </processorPath>
+        <module name="s-pay-mall-web" />
       </profile>
     </annotationProcessing>
   </component>
