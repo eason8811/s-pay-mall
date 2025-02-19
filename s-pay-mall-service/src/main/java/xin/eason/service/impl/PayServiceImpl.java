@@ -1,6 +1,5 @@
 package xin.eason.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.alipay.api.AlipayApiException;
@@ -61,7 +60,7 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
         } else if (unPayOrder != null && unPayOrder.getStatus().equals(OrderStatusEnum.CREATE)) {
             // 发生掉单, 流水单存在但是没有支付单
             log.info("发生掉单");
-            // TODO: 对接支付宝 SDK
+            // 对接支付宝 SDK
             PayOrder payOrder = doPrePay(
                     shopCartReq.getProductId(),
                     unPayOrder.getProductName(),
@@ -102,7 +101,7 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
         save(payOrder);
         log.info("创建订单成功: {}", payOrder);
 
-        // TODO: 调用支付宝 SDK 创建支付单
+        // 调用支付宝 SDK 创建支付单
         PayOrder waitingPayOrder = doPrePay(shopCartReq.getProductId(), payOrder.getProductName(), payOrder.getOrderId(), payOrder.getTotalAmount());
 
         return PayOrderRes.builder()
