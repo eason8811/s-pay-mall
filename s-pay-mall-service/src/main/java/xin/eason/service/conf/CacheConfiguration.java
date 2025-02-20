@@ -2,8 +2,10 @@ package xin.eason.service.conf;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.eventbus.EventBus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import xin.eason.service.listener.OrderSuccessListener;
 
 import java.util.concurrent.TimeUnit;
 
@@ -19,5 +21,12 @@ public class CacheConfiguration {
         return CacheBuilder.newBuilder()
                 .expireAfterWrite(7200, TimeUnit.SECONDS)
                 .build();
+    }
+
+    @Bean
+    public EventBus eventBus(OrderSuccessListener listener){
+        EventBus eventBus = new EventBus();
+        eventBus.register(listener);
+        return eventBus;
     }
 }

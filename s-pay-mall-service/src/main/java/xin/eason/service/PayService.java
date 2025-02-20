@@ -1,6 +1,8 @@
 package xin.eason.service;
 
+import com.alipay.api.AlipayApiException;
 import com.baomidou.mybatisplus.extension.service.IService;
+import jakarta.servlet.http.HttpServletRequest;
 import xin.eason.domain.po.PayOrder;
 import xin.eason.domain.req.ShopCartReq;
 import xin.eason.domain.res.PayOrderRes;
@@ -13,4 +15,11 @@ public interface PayService extends IService<PayOrder> {
      * @return 封装了 用户ID, 生成的订单ID, 支付的Url, 订单状态 的对象
      */
     PayOrderRes createOrder(ShopCartReq shopCartReq);
+
+    /**
+     * 支付宝验签流程, 验证请求是否是支付宝发送的, 并确认支付状态, 然后更新到数据库
+     * @param request 请求对象
+     * @return <b>success</b> 或 <b>false</b> 支付状态
+     */
+    String paySuccess(HttpServletRequest request) throws AlipayApiException;
 }

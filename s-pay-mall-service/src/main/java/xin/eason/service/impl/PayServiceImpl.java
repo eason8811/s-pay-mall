@@ -4,9 +4,12 @@ import cn.hutool.core.util.RandomUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
+import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
 import com.alipay.api.response.AlipayTradePagePayResponse;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.eventbus.EventBus;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,8 @@ import xin.eason.service.rpc.ProductRpc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -33,6 +38,8 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
     private final AlipayClient alipayClient;
 
     private final AlipayProperties alipayProperties;
+
+    private final EventBus eventBus;
 
     /**
      * 创建订单 (流水单)
@@ -156,6 +163,49 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
         lambdaUpdate().eq(PayOrder::getOrderId, payOrder.getOrderId()).update(payOrder);
         log.info("支付 URL: \n{}", payUrl);
         return payOrder;
+    }
+
+    /**
+     * 支付宝验签流程, 验证请求是否是支付宝发送的, 并确认支付状态, 然后更新到数据库
+     * @param request 请求对象
+     * @return <b>success</b> 或 <b>false</b> 支付状态
+     */
+    public String paySuccess(HttpServletRequest request) throws AlipayApiException {
+        if (request.getParameter("trade_status").equals("TRADE_SUCCESS")) {
+            Map<String, String> params = new HashMap<>();
+            Map<String, String[]> requestParams = request.getParameterMap();
+            for (String name : requestParams.keySet()) {
+                params.put(name, request.getParameter(name));
+            }
+
+            String tradeNo = params.get("out_trade_no");
+            String gmtPayment = params.get("gmt_payment");
+            String alipayTradeNo = params.get("trade_no");
+
+            String sign = params.get("sign");
+            String content = AlipaySignature.getSignCheckContentV1(params);
+            boolean checkSignature = AlipaySignature.rsa256CheckContent(content, sign, alipayProperties.getAlipayPublicKey(), "UTF-8"); // 验证签名
+            // 支付宝验签
+            if (checkSignature) {
+                // 验签通过
+                log.info("支付回调，交易名称: {}", params.get("subject"));
+                log.info("支付回调，交易状态: {}", params.get("trade_status"));
+                log.info("支付回调，支付宝交易凭证号: {}", params.get("trade_no"));
+                log.info("支付回调，商户订单号: {}", params.get("out_trade_no"));
+                log.info("支付回调，交易金额: {}", params.get("total_amount"));
+                log.info("支付回调，买家在支付宝唯一id: {}", params.get("buyer_id"));
+                log.info("支付回调，买家付款时间: {}", params.get("gmt_payment"));
+                log.info("支付回调，买家付款金额: {}", params.get("buyer_pay_amount"));
+                log.info("支付回调，支付回调，更新订单 {}", tradeNo);
+                // 更新数据库订单支付状态
+
+                lambdaUpdate().eq(PayOrder::getOrderId, tradeNo).update(PayOrder.builder().status(OrderStatusEnum.PAY_SUCCESS).build());
+                eventBus.post("订单: " + tradeNo + " 支付成功!");
+
+                return "success";
+            }
+        }
+        return "false";
     }
 
 }
