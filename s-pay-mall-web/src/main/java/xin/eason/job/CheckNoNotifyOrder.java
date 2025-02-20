@@ -5,11 +5,13 @@ import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.request.AlipayTradeQueryRequest;
 import com.alipay.api.response.AlipayTradeQueryResponse;
-import com.google.common.eventbus.EventBus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import xin.eason.common.constant.MQMsgConstant;
 import xin.eason.common.constant.OrderStatusEnum;
 import xin.eason.domain.po.PayOrder;
 import xin.eason.service.PayService;
@@ -26,12 +28,12 @@ public class CheckNoNotifyOrder {
 
     private final AlipayClient alipayClient;
 
-    private final EventBus eventBus;
+    private final RabbitTemplate rabbitTemplate;
 
     /**
-     * 每秒检查状态为等待支付且未到期的订单, 向支付宝确认该订单的支付状态
+     * 每分钟检查状态为等待支付且未到期的订单, 向支付宝确认该订单的支付状态
      */
-    @Scheduled(cron = "0 0/1 * * * ?")
+    @Scheduled(cron = "0 0/2 * * * ?")
     public void exec(){
         try {
             LocalDateTime now = LocalDateTime.now();
@@ -55,7 +57,8 @@ public class CheckNoNotifyOrder {
                             .set(PayOrder::getStatus, OrderStatusEnum.PAY_SUCCESS)
                             .update();
                     log.info("查询到未更新的未支付订单, 订单ID: {}, 已经更改为支付成功!", order.getOrderId());
-                    eventBus.post(order.getOrderId());
+                    CorrelationData cd = payService.initCD();
+                    rabbitTemplate.convertAndSend(MQMsgConstant.PAY_SUCCESS_EXCHANGE, MQMsgConstant.PAY_SUCCESS_ROUTING_KEY, order.getOrderId(), cd);
                 }
             }
         } catch (AlipayApiException e) {
@@ -63,4 +66,6 @@ public class CheckNoNotifyOrder {
         }
 
     }
+
+
 }

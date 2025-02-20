@@ -8,11 +8,14 @@ import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
 import com.alipay.api.response.AlipayTradePagePayResponse;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.google.common.eventbus.EventBus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.BiConsumer;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import xin.eason.common.constant.MQMsgConstant;
 import xin.eason.common.constant.OrderStatusEnum;
 import xin.eason.common.properties.AlipayProperties;
 import xin.eason.dao.PayMapper;
@@ -39,7 +42,7 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
 
     private final AlipayProperties alipayProperties;
 
-    private final EventBus eventBus;
+    private final RabbitTemplate rabbitTemplate;
 
     /**
      * 创建订单 (流水单)
@@ -94,7 +97,7 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
                 .userId(shopCartReq.getUserId())
                 .productId(shopCartReq.getProductId())
                 .productName(productVO.getProductName())
-                .orderId(String.valueOf(System.currentTimeMillis()).substring(0,10) + String.valueOf(RandomUtil.randomInt(1000)))
+                .orderId(String.valueOf(System.currentTimeMillis()).substring(0, 10) + String.valueOf(RandomUtil.randomInt(1000)))
                 .orderTime(nowTime)
                 .totalAmount(productVO.getPrice())
                 .status(OrderStatusEnum.CREATE)
@@ -121,8 +124,9 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
 
     /**
      * 与支付宝平台对接, 创建支付单
-     * @param productId 商品 ID
-     * @param orderId 唯一的订单ID
+     *
+     * @param productId   商品 ID
+     * @param orderId     唯一的订单ID
      * @param totalAmount 订单总价格
      * @return PayOrder 订单对象
      */
@@ -167,6 +171,7 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
 
     /**
      * 支付宝验签流程, 验证请求是否是支付宝发送的, 并确认支付状态, 然后更新到数据库
+     *
      * @param request 请求对象
      * @return <b>success</b> 或 <b>false</b> 支付状态
      */
@@ -200,12 +205,34 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
                 // 更新数据库订单支付状态
 
                 lambdaUpdate().eq(PayOrder::getOrderId, tradeNo).update(PayOrder.builder().status(OrderStatusEnum.PAY_SUCCESS).build());
-                eventBus.post("订单: " + tradeNo + " 支付成功!");
+                // 向支付成功消息队列发送消息
+                CorrelationData cd = initCD();
+                rabbitTemplate.convertAndSend(MQMsgConstant.PAY_SUCCESS_EXCHANGE, MQMsgConstant.PAY_SUCCESS_ROUTING_KEY, tradeNo, cd);
 
                 return "success";
             }
         }
         return "false";
+    }
+
+    /**
+     * 为 CorrelationData 对象添加 Callback 方法, 实现发送者确认
+     * @return 配置好的 CorrelationData 对象
+     */
+    public CorrelationData initCD() {
+        CorrelationData cd = new CorrelationData();
+        cd.getFuture().whenComplete((BiConsumer<CorrelationData.Confirm, Throwable>) (confirm, throwable) -> {
+            if (throwable != null) {
+                log.error("消息发送过程出现错误: \n", throwable);
+                return;
+            }
+            if (confirm.isAck()) {
+                log.info("消息发送成功! {}", confirm);
+            } else {
+                log.info("消息发送失败, 原因: {}", confirm.getReason());
+            }
+        });
+        return cd;
     }
 
 }

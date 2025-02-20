@@ -8,6 +8,20 @@ spring:
     password: ${spring.datasource.password}
     url: jdbc:mysql://${spring.datasource.address}:${spring.datasource.port}/${spring.datasource.database}?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  rabbitmq:
+    host: 192.168.226.128
+    port: 5672
+    virtual-host: /s-pay-mall
+    username: s-pay-mall
+    password: 123456
+    publisher-confirm-type: correlated #开启publisher confirm机制，并设置confirm类型
+    publisher-returns: true #开启publisherreturn机制
+    listener:
+      simple:
+        acknowledge-mode: auto
+
+
 mybatis-plus:
   configuration:
     default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
