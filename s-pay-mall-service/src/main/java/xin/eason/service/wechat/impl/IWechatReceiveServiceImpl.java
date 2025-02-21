@@ -146,7 +146,7 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
             returnMessage = buildMessageTextEntity(openid, "您已经登录！");
 
             // 发送模板信息
-            sendLoginTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
+            sendTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
             return returnMessage;
         }
 
@@ -157,7 +157,7 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
             returnMessage = buildMessageTextEntity(openid, "登陆成功");
 
             // 发送模板信息
-            sendLoginTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
+            sendTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
 
             // 将 Ticket 和用户的 openId 存入缓存 ( Ticket -> openId )
             cache.put(ticket, openid);
@@ -170,7 +170,7 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
             log.info("未关注用户: {} 登陆成功! 并且已关注!", openid);
             returnMessage = buildMessageTextEntity(openid, "登陆成功");
             // 发送模板信息
-            sendLoginTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
+            sendTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
 
             // 将 Ticket 和用户的 openId 存入缓存 ( Ticket -> openId )
             cache.put(ticket, openid);
@@ -235,7 +235,7 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
         dataMap.put("location", "( 纬度: " + locationEvent.getLatitude() + ", 经度: " + locationEvent.getLongitude() + ", 地理位置精度: " + locationEvent.getPrecision());
 
         // 发送模板信息
-        sendLoginTemplate(locationTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
+        sendTemplate(locationTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
         return "";
     }
 
@@ -264,9 +264,10 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
      * @param openid      需要发送的用户的 <b>openId</b>
      * @param turnToUrl   发送给用户的模板信息点击后跳转的 <b>URL</b>
      * @param accessToken 用于向微信公众平台调用 API 的 <b>Access Token</b>
+     * @param dataMap 用于存储数据的键值对
      * @return 如果发送成功则返回模板信息的 <b>ID</b>
      */
-    private Long sendLoginTemplate(String templateId, String openid, String turnToUrl, String accessToken, Map<String, String> dataMap) {
+    public Long sendTemplate(String templateId, String openid, String turnToUrl, String accessToken, Map<String, String> dataMap) {
         // 发送模板信息
         WechatTemplateReq request = new WechatTemplateReq();
         request.setTemplateId(templateId);

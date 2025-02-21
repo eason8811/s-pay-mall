@@ -25,7 +25,7 @@ public class SendProductJob {
     /**
      * 查询已支付完成但未发货订单, 实现自动发货
      */
-    @Scheduled(cron = "0 0/1 * * * ?")
+    @Scheduled(cron = "2 0/2 * * * ?")
     public void exec(){
         List<PayOrder> paySuccessOrderList = payService.lambdaQuery()
                 .eq(PayOrder::getStatus, OrderStatusEnum.PAY_SUCCESS)

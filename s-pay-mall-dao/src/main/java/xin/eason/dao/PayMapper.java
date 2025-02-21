@@ -7,5 +7,4 @@ import xin.eason.domain.po.PayOrder;
 
 @Mapper
 public interface PayMapper extends BaseMapper<PayOrder> {
-    void doneOrder(String orderId, OrderStatusEnum status);
 }
