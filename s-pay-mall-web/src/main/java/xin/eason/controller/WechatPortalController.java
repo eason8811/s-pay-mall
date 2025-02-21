@@ -13,6 +13,7 @@ import xin.eason.service.wechat.IWechatService;
 
 @Data
 @Slf4j
+@CrossOrigin
 @RestController
 @RequestMapping("/api/v1/weixin/portal")
 @RequiredArgsConstructor
