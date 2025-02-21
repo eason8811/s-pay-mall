@@ -24,6 +24,6 @@ public class InterceptorConfiguration implements WebMvcConfigurer {
         // 排除 login 路径的拦截
         registration.excludePathPatterns("/api/v1/login/**");
         registration.excludePathPatterns("/api/v1/weixin/portal/**");
-//        registration.excludePathPatterns("/api/v1/alipay/**");
+        registration.excludePathPatterns("/api/v1/alipay/**");
     }
 }
