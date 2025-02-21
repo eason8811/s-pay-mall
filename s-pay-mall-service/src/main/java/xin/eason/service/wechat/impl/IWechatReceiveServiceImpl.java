@@ -155,6 +155,7 @@ public class IWechatReceiveServiceImpl implements IWechatReceiveService {
             log.info("已关注用户正在扫描公众号二维码, 用户 openId: {}, Ticket: {}", openid, ticket);
             log.info("用户: {} 登陆成功!", openid);
             returnMessage = buildMessageTextEntity(openid, "登陆成功");
+
             // 发送模板信息
             sendLoginTemplate(loginTemplateId, openid, turnToUrl, cache.getIfPresent("access_token"), dataMap);
 

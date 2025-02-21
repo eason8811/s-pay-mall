@@ -59,3 +59,10 @@ alipay:
   format: json
   charset: utf-8
   sign-type: RSA2
+
+s-pay-mall:
+  jwt:
+    location: classpath:hmall.jks
+    alias: hmall
+    password: hmall123
+    tokenTTL: 30m

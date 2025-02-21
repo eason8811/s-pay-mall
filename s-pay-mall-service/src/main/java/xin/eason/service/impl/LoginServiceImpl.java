@@ -7,14 +7,19 @@ import org.springframework.stereotype.Service;
 import retrofit2.Response;
 import xin.eason.common.constant.MessageConstant;
 import xin.eason.common.constant.WechatConstant;
+import xin.eason.common.properties.JwtProperties;
+import xin.eason.common.util.JwtUtil;
 import xin.eason.domain.req.WechatQrCodeReq;
 import xin.eason.domain.req.WechatReq;
 import xin.eason.domain.res.WechatQrCodeRes;
 import xin.eason.domain.res.WechatRes;
+import xin.eason.domain.vo.UserInfoVO;
 import xin.eason.service.wechat.IWechatService;
 import xin.eason.service.LoginService;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -26,6 +31,10 @@ public class LoginServiceImpl implements LoginService {
     private final Cache<String, String> cache;
 
     private final WechatReq wechatReq;
+
+    private final JwtUtil jwtUtil;
+
+    private final JwtProperties jwtProperties;
 
     /**
      * 获取 <b>Ticket</b> 业务流程
@@ -66,20 +75,34 @@ public class LoginServiceImpl implements LoginService {
     /**
      * 检查登录状态
      * @param ticket 用于生成二维码的 <b>Ticket</b>
-     * @return 登录状态
+     * @return 用户信息的视图对象
      */
     @Override
-    public String checkLogin(String ticket) {
+    public UserInfoVO checkLogin(String ticket) {
         String openId = cache.getIfPresent(ticket);
         String loginStatus = MessageConstant.NO_LOGIN;
         log.info("正在检查登录状态...");
-        if (openId != null && !openId.isBlank()){
-            loginStatus = MessageConstant.LOGIN;
-            log.info("登录状态: {}", loginStatus);
-            return loginStatus;
+
+        if (openId == null || openId.isBlank()) {
+            log.info("用户: {} 的登录状态: {}", openId, loginStatus);
+            return UserInfoVO.builder()
+                    .token("")
+                    .userOpenId("")
+                    .ticket(ticket)
+                    .loginStatus(loginStatus)
+                    .build();
         }
-        log.info("登录状态: {}", loginStatus);
-        return loginStatus;
+        loginStatus = MessageConstant.LOGIN;
+        String userInfo = ticket + "@" + openId;
+        String token = jwtUtil.create(userInfo, jwtProperties.getTokenTTL());
+        log.info("用户: {} 的登录状态: {}", openId, loginStatus);
+        return UserInfoVO.builder()
+                .token(token)
+                .userOpenId(openId)
+                .ticket(ticket)
+                .loginStatus(loginStatus)
+                .build();
+
     }
 
     /**

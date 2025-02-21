@@ -56,6 +56,7 @@ public class PayServiceImpl extends ServiceImpl<PayMapper, PayOrder> implements 
         PayOrder unPayOrder = lambdaQuery()
                 .eq(PayOrder::getUserId, shopCartReq.getUserId())
                 .eq(PayOrder::getProductId, shopCartReq.getProductId())
+                .eq(PayOrder::getStatus, OrderStatusEnum.PAY_WAITE)
                 .one();
         log.info("正在查询是否有未支付订单...");
         if (unPayOrder != null && unPayOrder.getStatus().equals(OrderStatusEnum.PAY_WAITE)) {

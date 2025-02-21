@@ -1,6 +1,7 @@
 package xin.eason.service;
 
 import xin.eason.domain.res.WechatQrCodeRes;
+import xin.eason.domain.vo.UserInfoVO;
 
 public interface LoginService {
 
@@ -14,7 +15,7 @@ public interface LoginService {
     /**
      * 检查登录状态
      * @param ticket 用于生成二维码的 <b>Ticket</b>
-     * @return 登录状态
+     * @return 用户信息的视图对象
      */
-    String checkLogin(String ticket);
+    UserInfoVO checkLogin(String ticket);
 }

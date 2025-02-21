@@ -42,7 +42,7 @@ public class WechatPortalController {
      * @param msgSignature 消息签名
      * @return 回复给公众平台的消息
      */
-    @PostMapping(value = "receive", produces = "application/xml; charset=UTF-8")
+    @PostMapping(value = "/receive", produces = "application/xml; charset=UTF-8")
     public String eventReceive(
             @RequestBody String requestBody,
             @RequestParam("signature") String signature,
