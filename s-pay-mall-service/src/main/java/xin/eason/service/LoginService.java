@@ -1,6 +1,5 @@
 package xin.eason.service;
 
-import xin.eason.domain.res.WechatQrCodeRes;
 import xin.eason.domain.vo.UserInfoVO;
 
 public interface LoginService {

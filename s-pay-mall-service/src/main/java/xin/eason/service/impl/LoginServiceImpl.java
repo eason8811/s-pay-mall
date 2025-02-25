@@ -18,8 +18,6 @@ import xin.eason.service.wechat.IWechatService;
 import xin.eason.service.LoginService;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -102,7 +100,6 @@ public class LoginServiceImpl implements LoginService {
                 .ticket(ticket)
                 .loginStatus(loginStatus)
                 .build();
-
     }
 
     /**
